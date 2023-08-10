@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProductRequest;
+use App\Http\Requests\ProductImageUploadRequest;
+use App\Http\Requests\ProductStoreRequest;
+use App\Http\Requests\ProductUpdateRequest;
 use App\Http\Resources\DefaultResource;
 use App\Models\Product;
 use App\Services\ProductService;
@@ -22,29 +24,22 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = $this->productService->getAll();
+        $products = $this->productService->paginate(5);
         return DefaultResource::collection($products);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProductRequest $request)
+    public function store(ProductStoreRequest $request)
     {
-        $product = $this->productService->queryName($request->name);
-        if ($product) {
-            return response()->json([
-                "message" => "Product already exists"   
-            ], 422);
-        }
-
         Product::create([
             "name" => $request->name,
             "brand" => $request->brand
         ]);
 
         return response()->json([
-            "message" => "Product created successfully"   
+            "data" => "Product created successfully"   
         ], 200);
     }
 
@@ -53,27 +48,23 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = $this->productService->find($id);
+        $product = $this->productService->findOrFail($id);
         return new DefaultResource($product);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(ProductUpdateRequest $request, string $id)
     {
-        $product = $this->productService->find($id);
-        if (!$product) {
-            return response()->json([
-                "message" => "Product not found"   
-            ], 404);
-        }
+        $product = $this->productService->findOrFail($id);
 
+        $product->name = $request->name;
         $product->brand = $request->brand;
         $product->save();
 
         return response()->json([
-            "message" => "Product updated successfully"   
+            "data" => "Product updated successfully"   
         ], 200);
     }
 
@@ -82,36 +73,20 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        $product = $this->productService->find($id);
-        $product->delete();
+        $this->productService->findOrFail($id)->delete();
 
         return response()->json([
             "message" => "Product deleted successfully"   
         ], 200);
     }
 
-    public function uploadImage(Request $request, $id)
+    public function uploadImage(ProductImageUploadRequest $request, $id)
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
-
-        $product = $this->productService->find($id);
-        if (!$product) {
-            return response()->json([
-                "message" => "Product not found"   
-            ], 404);
-        }
-        
-        $imageName = time().'.'.$request->image->extension();  
-        
-        $request->image->move(public_path('images'), $imageName);
-
-        $product->image = $imageName;
-        $product->save();
+        $product = $this->productService->findOrFail($id);
+        $product = $this->productService->uploadImage($request->image, $product);
 
         return response()->json([
-            "message" => "Image uploaded successfully"   
+            "data" => "Image uploaded successfully"   
         ], 200);
     }
 }
