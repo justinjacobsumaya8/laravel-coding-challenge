@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,5 +20,7 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-Route::get("products", [ProductController::class, 'index']);
-// Route::resource("products", ProductController::class);
+Route::post('/sanctum/token', [AuthController::class, 'createToken']);
+
+Route::resource("products", ProductController::class);
+Route::post("products/{id}/upload", [ProductController::class, 'uploadImage']);
