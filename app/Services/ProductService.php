@@ -3,21 +3,34 @@
 namespace App\Services;
 
 use App\Models\Product;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
-    public function getAll(int $paginate = 5)
+    public function paginate(int $pagination = 5)
     {
-        return Product::paginate($paginate);
+        return Product::paginate($pagination);
     }
 
-    public function find(string $id)
+    public function findOrFail(string $id)
     {
-        return Product::find($id);
+        return Product::findOrFail($id);
     }
 
-    public function queryName(string $name)
+    public function uploadImage(object $image, Product $product)
     {
-        return Product::where("name", $name)->first();
+        $filePath = "/images/products";
+        if ($product->image) {
+            Storage::disk('public')->delete("{$filePath}/{$product->image}");
+        }
+
+        $imageName = time() . '.' . $image->extension();
+        Storage::disk('public')->put("{$filePath}/{$imageName}", File::get($image));
+
+        $product->image = $imageName;
+        $product->save();
+
+        return $product;
     }
 }

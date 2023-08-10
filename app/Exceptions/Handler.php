@@ -5,6 +5,9 @@ namespace App\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
+use \Illuminate\Database\Eloquent\ModelNotFoundException;
+
+
 class Handler extends ExceptionHandler
 {
     /**
@@ -17,6 +20,15 @@ class Handler extends ExceptionHandler
         'password',
         'password_confirmation',
     ];
+
+    public function render($request, Throwable $e)
+    {
+        if ($e instanceof ModelNotFoundException) {
+            return response()->json([
+                'message' => 'Record not found',
+            ], 404);
+        }
+    }
 
     /**
      * Register the exception handling callbacks for the application.
